@@ -29,7 +29,7 @@ int main()
 	auto const encoded = Huffman::Encoded::encode(str);
 	auto const decoded = encoded.decode();
 
-	std::ifstream is("../data/14.Reseller (5597).Reseller (5603).dictionary", std::ifstream::binary);
+	std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/14.Reseller (5597).Reseller (5603).dictionary", std::ifstream::binary);
 	kaitai::kstream ks(&is);
 
 	column_data_dictionary_t dict(&ks);
