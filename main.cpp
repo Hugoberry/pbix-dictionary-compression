@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <fstream>
 #include <string>
+#include <iomanip>
 #include "kaitai/kaitaistream.h"
 #include "column_data_dictionary.h"
 
@@ -46,10 +47,18 @@ std::unordered_map<char, std::string> generate_codes(const std::vector<uint64_t>
 
     return codes;
 }
+// Print Huffman codes
+void print_huffman_codes(const std::unordered_map<char, std::string>& codes) {
+    std::cout << "Huffman Codes:\n";
+    for (const auto& [character, code] : codes) {
+        std::cout << character << ": " << code << '\n';
+    }
+}
 
 // Function to build the Huffman tree based on codes
 HuffmanTree* build_huffman_tree(const std::vector<uint64_t>& encode_array) {
     auto codes = generate_codes(encode_array);
+    print_huffman_codes(codes);
     HuffmanTree* root = new HuffmanTree;
 
     for (const auto& [character, code] : codes) {
@@ -79,6 +88,7 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
     for (uint32_t i = start_bit; i < start_bit + total_bits; ++i) {
         uint32_t byte_pos = bit_pos / 8;
         uint32_t bit_offset = bit_pos % 8;
+        // uint32_t bit_offset = 7 - (bit_pos % 8); // Adjusted to read bits in BE order
         if (!node->left && !node->right) {
             result += node->c;
             node = tree;
@@ -99,6 +109,19 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 
     return result;
 }
+// Print Huffman tree in a readable format
+void print_huffman_tree(HuffmanTree* node, int indent = 0) {
+    if (node == nullptr) return;
+
+    if (node->right) print_huffman_tree(node->right, indent + 4);
+
+    if (indent) std::cout << std::setw(indent) << ' ';
+    if (!node->left && !node->right) std::cout << node->c << '\n';
+    else std::cout << "⟨\n";
+
+    if (node->left) print_huffman_tree(node->left, indent + 4);
+}
+
 
 int main() {
     std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/14.Reseller (5597).Reseller (5603).dictionary", std::ifstream::binary);
@@ -119,7 +142,8 @@ int main() {
             std::string compressed_string_buffer = compressed_store->compressed_string_buffer();
 
             HuffmanTree* huffman_tree = build_huffman_tree(*encode_array);
-
+            std::cout << "Huffman Tree:\n";
+            print_huffman_tree(huffman_tree);
             // Decode each string using the offsets from record_handles
             for (size_t i = 0; i < record_handles->size(); i += 1) {
                 
