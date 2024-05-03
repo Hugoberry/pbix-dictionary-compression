@@ -167,7 +167,7 @@ public:
         uint64_t m_allocation_size;
         uint8_t m_character_set_used;
         uint32_t m_ui_decode_bits;
-        std::vector<uint64_t>* m_encode_array;
+        std::vector<uint8_t>* m_encode_array;
         uint64_t m_ui64_buffer_size;
         std::string m_compressed_string_buffer;
         column_data_dictionary_t* m__root;
@@ -179,7 +179,7 @@ public:
         uint64_t allocation_size() const { return m_allocation_size; }
         uint8_t character_set_used() const { return m_character_set_used; }
         uint32_t ui_decode_bits() const { return m_ui_decode_bits; }
-        std::vector<uint64_t>* encode_array() const { return m_encode_array; }
+        std::vector<uint8_t>* encode_array() const { return m_encode_array; }
         uint64_t ui64_buffer_size() const { return m_ui64_buffer_size; }
         std::string compressed_string_buffer() const { return m_compressed_string_buffer; }
         column_data_dictionary_t* _root() const { return m__root; }

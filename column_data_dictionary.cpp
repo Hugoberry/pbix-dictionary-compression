@@ -228,12 +228,11 @@ void column_data_dictionary_t::compressed_strings_t::_read() {
     m_allocation_size = m__io->read_u8le();
     m_character_set_used = m__io->read_u1();
     m_ui_decode_bits = m__io->read_u4le();
-    m_encode_array = new std::vector<uint64_t>();
-    const int l_encode_array = 256;
+    m_encode_array = new std::vector<uint8_t>();
+    const int l_encode_array = 128;
     for (int i = 0; i < l_encode_array; i++) {
-        m_encode_array->push_back(m__io->read_bits_int_be(4));
+        m_encode_array->push_back(m__io->read_u1());
     }
-    m__io->align_to_byte();
     m_ui64_buffer_size = m__io->read_u8le();
     m_compressed_string_buffer = m__io->read_bytes(allocation_size());
 }

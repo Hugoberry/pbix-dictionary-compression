@@ -97,9 +97,9 @@ types:
       - id: ui_decode_bits
         type: u4
       - id: encode_array
-        type: b4
+        type: u1
         repeat: expr
-        repeat-expr: 256
+        repeat-expr: 128
       - id: ui64_buffer_size
         type: u8
       - id: compressed_string_buffer
