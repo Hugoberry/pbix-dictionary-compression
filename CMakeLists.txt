@@ -15,4 +15,4 @@ include_directories(include)
 set(KAITAI_SOURCES
     third_party/kaitai/kaitaistream.cpp)
 
-add_executable(VertipaqDictinary main.cpp Huffman.cpp column_data_dictionary.cpp ${KAITAI_SOURCES})
+add_executable(VertipaqDictinary main.cpp column_data_dictionary.cpp ${KAITAI_SOURCES})
