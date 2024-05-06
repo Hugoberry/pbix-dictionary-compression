@@ -116,27 +116,28 @@ HuffmanTree* build_huffman_tree(const std::vector<uint8_t>& encode_array) {
 std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, uint32_t start_bit, uint32_t end_bit) {
     std::string result;
     const HuffmanTree* node = tree;
-    uint32_t bit_pos = start_bit;
     uint32_t total_bits = end_bit - start_bit;
 
+    // Adjust bit position calculation for little endian byte order
     for (uint32_t i = 0; i < total_bits; ++i) {
+        uint32_t bit_pos = start_bit + i;
         uint32_t byte_pos = bit_pos / 8;
         uint32_t bit_offset = bit_pos % 8;
 
+        // Convert byte index for little endian (pair-wise)
+        byte_pos = (byte_pos & ~0x01) + (1 - (byte_pos & 0x01));
+
         if (!node->left && !node->right) {
-            // Append the character and add the character set byte if needed
             result += (char)(node->c);
             node = tree; // Reset to the root node
         }
 
         // Traverse the Huffman tree based on the current bit
-        if (bitstream[byte_pos] & (1 << bit_offset)) {
+        if (bitstream[byte_pos] & (1 << (7 - bit_offset))) {  // Adjusting bit offset to read from MSB to LSB
             node = node->right;
         } else {
             node = node->left;
         }
-
-        bit_pos++;
     }
 
     // Append the last character if the final node is a leaf
@@ -146,6 +147,7 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 
     return result;
 }
+
 // Print Huffman tree in a readable format
 void print_huffman_tree(HuffmanTree* node, int indent = 0) {
     if (node == nullptr) return;
@@ -161,7 +163,7 @@ void print_huffman_tree(HuffmanTree* node, int indent = 0) {
 
 
 int main() {
-    std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/AAA_BBB_C_D_E.dictionary", std::ifstream::binary);
+    std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/Reseller.dictionary", std::ifstream::binary);
     kaitai::kstream ks(&is);
 
     column_data_dictionary_t dictionary(&ks);
@@ -194,7 +196,7 @@ int main() {
                 uint32_t start_bit = (*record_handles)[i];
                 uint32_t end_bit = (i + 1 < record_handles->size()) ? (*record_handles)[i + 1] : store_total_bits;
                 std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
-                std::cout << "Decompressed string " << i << ": " << decompressed << std::endl;
+                std::cout << "Decompressed string " << start_bit<< "/"<<end_bit <<" - "<< i << ": " << decompressed << std::endl;
             }
 
             delete huffman_tree;
