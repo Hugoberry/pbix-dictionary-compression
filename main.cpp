@@ -7,7 +7,6 @@
 #include <string>
 #include <queue>
 #include <iomanip>
-#include <map>  
 #include "kaitai/kaitaistream.h"
 #include "column_data_dictionary.h"
 
@@ -179,7 +178,7 @@ int main(int argc, char* argv[]) {
         auto stringData = static_cast<column_data_dictionary_t::string_data_t*>(dictionary.data());
         auto pages = stringData->dictionary_pages();
         auto record_handles = stringData->dictionary_record_handles_vector_info()->vector_of_record_handle_structures();
-        std::map<int, std::vector<int>> record_handles_map;
+        std::unordered_map<int, std::vector<int>> record_handles_map;
         // make record_handle a map of page_id and bit_or_byte_offset
         for (const auto& handle : *record_handles) {
             record_handles_map[handle->page_id()].push_back(handle->bit_or_byte_offset());
@@ -228,7 +227,6 @@ int main(int argc, char* argv[]) {
                  dictionary.dictionary_type() == column_data_dictionary_t::DICTIONARY_TYPES_XM_TYPE_REAL)
         {
             // Handling numeric data
-            std::map<uint64_t, double> values;
             auto numberData = static_cast<column_data_dictionary_t::number_data_t *>(dictionary.data());
             auto vector_info = numberData->vector_of_vectors_info();
             const auto &vals = vector_info->values();
