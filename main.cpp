@@ -224,7 +224,21 @@ int main(int argc, char* argv[]) {
 
         }
 
-    }
+    } else if (dictionary.dictionary_type() == column_data_dictionary_t::DICTIONARY_TYPES_XM_TYPE_LONG ||
+                 dictionary.dictionary_type() == column_data_dictionary_t::DICTIONARY_TYPES_XM_TYPE_REAL)
+        {
+            // Handling numeric data
+            std::map<uint64_t, double> values;
+            auto numberData = static_cast<column_data_dictionary_t::number_data_t *>(dictionary.data());
+            auto vector_info = numberData->vector_of_vectors_info();
+            const auto &vals = vector_info->values();
+
+            for (double val : *vals)
+            {
+                std::cout<< val << std::endl;
+            }
+
+        }
 
     return 0;
 }
