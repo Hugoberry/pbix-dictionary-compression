@@ -46,7 +46,7 @@ std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_
     // Collect only the non-zero lengths and their associated symbols
     for (auto i = 0; i < 256; i++) {
         if (lengths[i] != 0){
-            std::cout << "Processing index " << (int)i << " with length " << (int)lengths[i] << std::endl;
+// std::cout << "Processing index " << (int)i << " with length " << (int)lengths[i] << std::endl;
             sorted_lengths.emplace_back(lengths[i], i);
         }
     }
@@ -84,7 +84,7 @@ void print_huffman_codes(const std::unordered_map<uint8_t, std::string>& codes) 
 // Build Huffman tree based on generated codes
 HuffmanTree* build_huffman_tree(const std::vector<uint8_t>& encode_array) {
     auto codes = generate_codes(encode_array);
-    print_huffman_codes(codes);
+// print_huffman_codes(codes);
     HuffmanTree* root = new HuffmanTree;
 
     for (const auto& [character, code] : codes) {
@@ -154,8 +154,22 @@ void print_huffman_tree(HuffmanTree* node, int indent = 0) {
 }
 
 
-int main() {
-    std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/Sales Order Line.dictionary", std::ifstream::binary);
+int main(int argc, char* argv[]) {
+    // Check for the correct number of arguments
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <dictionary_file_path>" << std::endl;
+        return 1;
+    }
+
+    // Read the file name from arguments
+    const char* filename = argv[1];
+
+    // Open the file and check if it opened successfully
+    std::ifstream is(filename, std::ifstream::binary);
+    if (!is) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return 1;
+    }
     kaitai::kstream ks(&is);
 
     column_data_dictionary_t dictionary(&ks);
@@ -189,7 +203,8 @@ int main() {
                         uint32_t start_bit = it->second[i];
                         uint32_t end_bit = (i + 1 < it->second.size()) ? it->second[i + 1] : store_total_bits; // end of the compressed buffer
                         std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
-                        std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
+// std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
+                        std::cout  << decompressed << std::endl;
                     }
                 }
 
@@ -202,7 +217,8 @@ int main() {
                 std::string token;
                 while (std::getline(ss, token, '\0'))
                 { // assuming null-terminated strings in buffer
-                    std::cout << "Uncompressed string - " << page_id << ": " << token << std::endl;
+// std::cout << "Uncompressed string - " << page_id << ": " << token << std::endl;
+                    std::cout << token << std::endl;
                 }
             }
 
