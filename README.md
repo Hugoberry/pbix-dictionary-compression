@@ -4,8 +4,9 @@ This repository contains code for parsing `*.dictionary` files, which are part o
 
 ## Features
 
+- **Dictionary Types**: Supports parsing string and numerical based dictinaries. 
 - **Dictionary Parsing**: Efficiently parses dictionary files for extracting compressed and uncompressed data.
-- **Huffman Tree Decompression**: Supports Huffman Tree-based decompression for reading encoded data.
+- **Huffman Tree Decompression**: Implements Huffman Tree-based decompression for reading encoded data.
 - **Multi-Page Support**: Handles dictionary files with multiple pages.
 
 ## Requirements

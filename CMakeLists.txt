@@ -10,7 +10,6 @@ add_definitions(-DKS_STR_ENCODING_ICONV)
 
 include_directories(third_party/kaitai)
 include_directories(third_party)
-include_directories(include)
 
 set(KAITAI_SOURCES
     third_party/kaitai/kaitaistream.cpp)
