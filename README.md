@@ -21,8 +21,8 @@ To build and run this project, ensure that your system has the following:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-repo/vertipaq-dictionary-parser.git
-cd vertipaq-dictionary-parser
+git clone https://github.com/Hugoberry/pbix-dictionary-compression.git
+cd pbix-dictionary-compression
 ```
 
 ### 2. Build the Project
