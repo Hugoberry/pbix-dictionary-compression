@@ -90,7 +90,8 @@ types:
         type: u4
       - id: character_set_type_identifier
         type: u4
-      - id: allocation_size
+      - id: len_compressed_string_buffer
+        -orig-id: allocation_size
         type: u8
       - id: character_set_used
         type: u1
@@ -103,11 +104,12 @@ types:
       - id: ui64_buffer_size
         type: u8
       - id: compressed_string_buffer
-        size: allocation_size
+        size: len_compressed_string_buffer
 
   dictionary_record_handles_vector:
     seq:
-      - id: element_count
+      - id: num_vector_of_record_handle_structures
+        -orig-id: element_count
         type: u8
       - id: element_size
         type: u4
@@ -115,10 +117,21 @@ types:
         type:
           switch-on: element_size
           cases:
-            4: u4
-            8: u8
+            4: other_record_handle
+            8: string_record_handle
         repeat: expr
-        repeat-expr: element_count
+        repeat-expr: num_vector_of_record_handle_structures
+        
+  string_record_handle:
+    seq:
+      - id: bit_or_byte_offset
+        type: u4
+      - id: page_id
+        type: u4
+  other_record_handle:
+    seq:
+      - id: bit_or_byte_offset
+        type: u4
 
   number_data:
     seq:
@@ -127,7 +140,8 @@ types:
 
   vector_of_vectors:
     seq:
-      - id: element_count
+      - id: num_values
+        -orig-id: element_count
         type: u8
       - id: element_size
         type: u4
@@ -139,7 +153,7 @@ types:
             '"int64"': s8
             '"float64"': f8
         repeat: expr
-        repeat-expr: element_count
+        repeat-expr: num_values
     instances:
       is_int32:
         value: element_size == 4
