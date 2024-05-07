@@ -112,13 +112,10 @@ types:
         -orig-id: element_count
         type: u8
       - id: element_size
-        type: u4
+        contents: [ 8, 0, 0, 0]
+        size: 4
       - id: vector_of_record_handle_structures 
-        type:
-          switch-on: element_size
-          cases:
-            4: other_record_handle
-            8: string_record_handle
+        type: string_record_handle
         repeat: expr
         repeat-expr: num_vector_of_record_handle_structures
         

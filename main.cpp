@@ -7,6 +7,7 @@
 #include <string>
 #include <queue>
 #include <iomanip>
+#include <map>  
 #include "kaitai/kaitaistream.h"
 #include "column_data_dictionary.h"
 
@@ -36,15 +37,6 @@ std::vector<uint8_t> decompress_encode_array(const std::vector<uint8_t>& compres
 
     return full_array;
 }
-// Comparator to sort symbols based on codeword length and then by symbol value
-struct CodeComparator {
-    bool operator()(const std::pair<int, char>& a, const std::pair<int, char>& b) const {
-        if (a.first == b.first) {
-            return a.second > b.second;
-        }
-        return a.first > b.first;
-    }
-};
 
 // Function to generate Huffman codes based on codeword lengths
 std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_t>& lengths) {
@@ -163,7 +155,7 @@ void print_huffman_tree(HuffmanTree* node, int indent = 0) {
 
 
 int main() {
-    std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/Reseller.dictionary", std::ifstream::binary);
+    std::ifstream is("/home/boom/git/hub/pbix-dictionary-compression/data/Sales Order Line.dictionary", std::ifstream::binary);
     kaitai::kstream ks(&is);
 
     column_data_dictionary_t dictionary(&ks);
@@ -171,36 +163,51 @@ int main() {
     // Checking dictionary type and processing accordingly
     if (dictionary.dictionary_type() == column_data_dictionary_t::DICTIONARY_TYPES_XM_TYPE_STRING) {
         auto stringData = static_cast<column_data_dictionary_t::string_data_t*>(dictionary.data());
-        auto page = stringData->dictionary_pages();
-
-        if (page->at(0)->page_compressed()) {
-            auto compressed_store = static_cast<column_data_dictionary_t::compressed_strings_t*>(page->at(0)->string_store());
-            auto encode_array = compressed_store->encode_array();
-            uint32_t store_total_bits = compressed_store->store_total_bits();
-            std::vector<uint64_t>* record_handles = stringData->dictionary_record_handles_vector_info()->vector_of_record_handle_structures();
-            std::string compressed_string_buffer = compressed_store->compressed_string_buffer();
-
-            auto full_encode_array = decompress_encode_array(*encode_array);
-
-            for(auto i : full_encode_array) {
-                std::cout << (int)i << " ";
-            }
-            std::cout << std::endl;
-
-            HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
-            std::cout << "Huffman Tree:\n";
-            print_huffman_tree(huffman_tree);
-            // Decode each string using the offsets from record_handles
-            for (size_t i = 0; i < record_handles->size(); i += 1) {
-                
-                uint32_t start_bit = (*record_handles)[i];
-                uint32_t end_bit = (i + 1 < record_handles->size()) ? (*record_handles)[i + 1] : store_total_bits;
-                std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
-                std::cout << "Decompressed string " << start_bit<< "/"<<end_bit <<" - "<< i << ": " << decompressed << std::endl;
-            }
-
-            delete huffman_tree;
+        auto pages = stringData->dictionary_pages();
+        auto record_handles = stringData->dictionary_record_handles_vector_info()->vector_of_record_handle_structures();
+        std::map<int, std::vector<int>> record_handles_map;
+        // make record_handle a map of page_id and bit_or_byte_offset
+        for (const auto& handle : *record_handles) {
+            record_handles_map[handle->page_id()].push_back(handle->bit_or_byte_offset());
         }
+
+        for(int page_id = 0; page_id < pages->size(); page_id++){
+            const auto& page = pages->at(page_id);
+            if(page->page_compressed()){
+                auto compressed_store = static_cast<column_data_dictionary_t::compressed_strings_t*>(page->string_store());
+                auto encode_array = compressed_store->encode_array();
+                auto store_total_bits = compressed_store->store_total_bits();
+                auto compressed_string_buffer = compressed_store->compressed_string_buffer();
+
+                auto full_encode_array = decompress_encode_array(*encode_array);
+
+                HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
+
+                auto it = record_handles_map.find(page_id);
+                if (it != record_handles_map.end()) {
+                    for (size_t i = 0; i < it->second.size(); i++) {
+                        uint32_t start_bit = it->second[i];
+                        uint32_t end_bit = (i + 1 < it->second.size()) ? it->second[i + 1] : store_total_bits; // end of the compressed buffer
+                        std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
+                        std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
+                    }
+                }
+
+                delete huffman_tree;
+            } else {
+                auto uncompressed_store = static_cast<column_data_dictionary_t::uncompressed_strings_t *>(page->string_store());
+                auto uncompressed = uncompressed_store->uncompressed_character_buffer();
+                // Extracting strings and filling the hashtable
+                std::istringstream ss(uncompressed);
+                std::string token;
+                while (std::getline(ss, token, '\0'))
+                { // assuming null-terminated strings in buffer
+                    std::cout << "Uncompressed string - " << page_id << ": " << token << std::endl;
+                }
+            }
+
+        }
+
     }
 
     return 0;
