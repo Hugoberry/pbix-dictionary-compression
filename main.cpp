@@ -109,6 +109,17 @@ HuffmanTree* build_huffman_tree(const std::vector<uint8_t>& encode_array) {
     return root;
 }
 
+// Build Huffman tree lookup based on generated codes
+std::unordered_map<std::string, char> build_lookup_map(const std::vector<uint8_t>& encode_array) {
+    auto codes = generate_codes(encode_array);
+// print_huffman_codes(codes);
+    std::unordered_map<std::string, char> huffman_map;
+    for (const auto& [character, codeword] : codes) {
+        huffman_map[codeword] = character;
+    }
+    return huffman_map;
+}
+
 // Build Huffman tree and lookup table
 std::pair<HuffmanTree*, std::vector<HuffmanTableEntry>> build_huffman_tree_with_lookup(const std::vector<uint8_t>& encode_array, uint32_t max_codeword) {
     auto codes = generate_codes(encode_array);
@@ -188,6 +199,37 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 
     return result;
 }
+
+
+// Decode a bitstream from start to end bit positions using the Huffman tree
+std::string decode_substring_with_map(const std::string& bitstream, const std::unordered_map<std::string, char>& huffmanMap, uint32_t start_bit, uint32_t end_bit) {
+    std::string result;
+    uint32_t total_bits = end_bit - start_bit;
+
+    int current_code = 0;
+    int code_length = 0;
+
+    // Adjust bit position calculation for little endian byte order
+    for (uint32_t i = 0; i < total_bits; ++i) {
+        uint32_t bit_pos = start_bit + i;
+        uint32_t byte_pos = bit_pos / 8;
+        uint32_t bit_offset = bit_pos % 8;
+        byte_pos = (byte_pos & ~0x01) + (1 - (byte_pos & 0x01));
+
+        current_code = (current_code << 1) | ((bitstream[byte_pos] & (1 << (7 - bit_offset))) != 0);
+        code_length++;
+
+        // Check lookup table if code length is within limit
+        if (code_length <= 15 && huffmanMap.count(std::bitset<15>(current_code).to_string().substr(15 - code_length)) > 0){
+            result += huffmanMap.at(std::bitset<15>(current_code).to_string().substr(15 - code_length));
+            current_code = 0;
+            code_length = 0;
+        }
+    }
+
+    return result;
+}
+
 
 // Decode using Huffman tree and lookup table
 std::string decode_substring_with_lookup(const std::string& bitstream, HuffmanTree* tree, std::vector<HuffmanTableEntry>& lookup_table, uint32_t start_bit, uint32_t end_bit) {
@@ -293,6 +335,7 @@ int main(int argc, char* argv[]) {
                 HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
                 // Build Huffman tree and lookup table
                 // auto [huffman_tree, lookup_table] = build_huffman_tree_with_lookup(full_encode_array, ui_decode_bits); 
+                // auto huffman_map = build_lookup_map(full_encode_array);
 
                 auto it = record_handles_map.find(page_id);
                 if (it != record_handles_map.end()) {
@@ -301,11 +344,11 @@ int main(int argc, char* argv[]) {
                         uint32_t end_bit = (i + 1 < it->second.size()) ? it->second[i + 1] : store_total_bits; // end of the compressed buffer
                         std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
                         // std::string decompressed = decode_substring_with_lookup(compressed_string_buffer, huffman_tree, lookup_table, start_bit, end_bit);
+                        // std::string decompressed = decode_substring_with_map(compressed_string_buffer, huffman_map, start_bit, end_bit);
 // std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
                         std::cout  << decompressed << std::endl;
                     }
                 }
-
                 delete huffman_tree;
             } else {
                 auto uncompressed_store = static_cast<column_data_dictionary_t::uncompressed_strings_t *>(page->string_store());
