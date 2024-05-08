@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
                         std::cout  << decompressed << std::endl;
                     }
                 }
-                delete huffman_tree;
+                //delete huffman_tree;
             } else {
                 auto uncompressed_store = static_cast<column_data_dictionary_t::uncompressed_strings_t *>(page->string_store());
                 auto uncompressed = uncompressed_store->uncompressed_character_buffer();
