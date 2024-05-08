@@ -332,19 +332,19 @@ int main(int argc, char* argv[]) {
 
                 auto full_encode_array = decompress_encode_array(*encode_array);
 
-                HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
+                // HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
                 // Build Huffman tree and lookup table
                 // auto [huffman_tree, lookup_table] = build_huffman_tree_with_lookup(full_encode_array, ui_decode_bits); 
-                // auto huffman_map = build_lookup_map(full_encode_array);
+                auto huffman_map = build_lookup_map(full_encode_array);
 
                 auto it = record_handles_map.find(page_id);
                 if (it != record_handles_map.end()) {
                     for (size_t i = 0; i < it->second.size(); i++) {
                         uint32_t start_bit = it->second[i];
                         uint32_t end_bit = (i + 1 < it->second.size()) ? it->second[i + 1] : store_total_bits; // end of the compressed buffer
-                        std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
+                        // std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
                         // std::string decompressed = decode_substring_with_lookup(compressed_string_buffer, huffman_tree, lookup_table, start_bit, end_bit);
-                        // std::string decompressed = decode_substring_with_map(compressed_string_buffer, huffman_map, start_bit, end_bit);
+                        std::string decompressed = decode_substring_with_map(compressed_string_buffer, huffman_map, start_bit, end_bit);
 // std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
                         std::cout  << decompressed << std::endl;
                     }
