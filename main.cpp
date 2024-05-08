@@ -13,14 +13,10 @@
 // Huffman Tree Node definition
 struct HuffmanTree {
     char c;
-    HuffmanTree* left;
-    HuffmanTree* right;
+    std::unique_ptr<HuffmanTree> left;
+    std::unique_ptr<HuffmanTree> right;
 
     HuffmanTree(uint8_t c = 0) : c(c), left(nullptr), right(nullptr) {}
-    ~HuffmanTree() {
-        delete left;
-        delete right;
-    }
 };
 
 struct HuffmanTableEntry {
@@ -87,20 +83,20 @@ void print_huffman_codes(const std::unordered_map<uint8_t, std::string>& codes) 
 }
 
 // Build Huffman tree based on generated codes
-HuffmanTree* build_huffman_tree(const std::vector<uint8_t>& encode_array) {
+std::unique_ptr<HuffmanTree> build_huffman_tree(const std::vector<uint8_t>& encode_array) {
     auto codes = generate_codes(encode_array);
 // print_huffman_codes(codes);
-    HuffmanTree* root = new HuffmanTree;
+    std::unique_ptr<HuffmanTree> root = std::make_unique<HuffmanTree>();
 
     for (const auto& [character, code] : codes) {
-        HuffmanTree* node = root;
+        HuffmanTree* node = root.get();
         for (char bit : code) {
             if (bit == '0') {
-                if (!node->left) node->left = new HuffmanTree;
-                node = node->left;
+                if (!node->left) node->left = std::make_unique<HuffmanTree>();
+                node = node->left.get();
             } else {
-                if (!node->right) node->right = new HuffmanTree;
-                node = node->right;
+                if (!node->right) node->right = std::make_unique<HuffmanTree>();
+                node = node->right.get();
             }
         }
         node->c = character;
@@ -130,9 +126,9 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 
         // Traverse the Huffman tree based on the current bit
         if (bitstream[byte_pos] & (1 << (7 - bit_offset))) {  // Adjusting bit offset to read from MSB to LSB
-            node = node->right;
+            node = node->right.get();
         } else {
-            node = node->left;
+            node = node->left.get();
         }
     }
 
@@ -145,46 +141,17 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 }
 
 
-// Decode a bitstream from start to end bit positions using the Huffman tree
-std::string decode_substring_with_map(const std::string& bitstream, const std::unordered_map<std::string, char>& huffmanMap, uint32_t start_bit, uint32_t end_bit) {
-    std::string result;
-    uint32_t total_bits = end_bit - start_bit;
-
-    int current_code = 0;
-    int code_length = 0;
-
-    // Adjust bit position calculation for little endian byte order
-    for (uint32_t i = 0; i < total_bits; ++i) {
-        uint32_t bit_pos = start_bit + i;
-        uint32_t byte_pos = bit_pos / 8;
-        uint32_t bit_offset = bit_pos % 8;
-        byte_pos = (byte_pos & ~0x01) + (1 - (byte_pos & 0x01));
-
-        current_code = (current_code << 1) | ((bitstream[byte_pos] & (1 << (7 - bit_offset))) != 0);
-        code_length++;
-
-        // Check lookup table if code length is within limit
-        if (code_length <= 15 && huffmanMap.count(std::bitset<15>(current_code).to_string().substr(15 - code_length)) > 0){
-            result += huffmanMap.at(std::bitset<15>(current_code).to_string().substr(15 - code_length));
-            current_code = 0;
-            code_length = 0;
-        }
-    }
-
-    return result;
-}
-
 // Print Huffman tree in a readable format
 void print_huffman_tree(HuffmanTree* node, int indent = 0) {
     if (node == nullptr) return;
 
-    if (node->right) print_huffman_tree(node->right, indent + 4);
+    if (node->right) print_huffman_tree(node->right.get(), indent + 4);
 
     if (indent) std::cout << std::setw(indent) << ' ';
     if (!node->left && !node->right) std::cout << node->c << '\n';
     else std::cout << "⟨\n";
 
-    if (node->left) print_huffman_tree(node->left, indent + 4);
+    if (node->left) print_huffman_tree(node->left.get(), indent + 4);
 }
 
 
@@ -230,19 +197,19 @@ int main(int argc, char* argv[]) {
 
                 auto full_encode_array = decompress_encode_array(*encode_array);
 
-                HuffmanTree* huffman_tree = build_huffman_tree(full_encode_array);
+                std::unique_ptr<HuffmanTree> huffman_tree = build_huffman_tree(full_encode_array);
 
                 auto it = record_handles_map.find(page_id);
                 if (it != record_handles_map.end()) {
                     for (size_t i = 0; i < it->second.size(); i++) {
                         uint32_t start_bit = it->second[i];
                         uint32_t end_bit = (i + 1 < it->second.size()) ? it->second[i + 1] : store_total_bits; // end of the compressed buffer
-                        std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree, start_bit, end_bit);
+                        std::string decompressed = decode_substring(compressed_string_buffer, huffman_tree.get(), start_bit, end_bit);
 // std::cout << "Decompressed string " << start_bit << "/" << end_bit << " - " << page_id << ": " << decompressed << std::endl;
                         std::cout  << decompressed << std::endl;
                     }
                 }
-                delete huffman_tree;
+
             } else {
                 auto uncompressed_store = static_cast<column_data_dictionary_t::uncompressed_strings_t *>(page->string_store());
                 auto uncompressed = uncompressed_store->uncompressed_character_buffer();
