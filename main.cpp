@@ -23,12 +23,6 @@ struct HuffmanTree {
     }
 };
 
-struct HuffmanTableEntry {
-    uint8_t character;
-    uint8_t length;  // 0 means invalid entry
-};
-
-
 // Function to generate the full 256-byte Huffman array from the compact 128-byte encode_array
 std::vector<uint8_t> decompress_encode_array(const std::vector<uint8_t>& compressed) {
     std::vector<uint8_t> full_array(256, 0);
@@ -37,7 +31,6 @@ std::vector<uint8_t> decompress_encode_array(const std::vector<uint8_t>& compres
         uint8_t byte = compressed[i];
         full_array[2 * i] = byte & 0x0F;         // Lower nibble
         full_array[2 * i + 1] = (byte >> 4) & 0x0F; // Upper nibble
-        // std::cout << 2*i << " Byte: " << std::bitset<8>(byte) << " Lower: " << std::bitset<4>(full_array[2 * i])<< ":"<< (int)full_array[2 * i] << " Upper: " << std::bitset<4>(full_array[2 * i + 1])<<":"<< (int)full_array[2 * i + 1] << std::endl;
     }
 
     return full_array;
@@ -51,11 +44,9 @@ std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_
     // Collect only the non-zero lengths and their associated symbols
     for (auto i = 0; i < 256; i++) {
         if (lengths[i] != 0){
-// std::cout << "Processing index " << (int)i << " with length " << (int)lengths[i] << std::endl;
             sorted_lengths.emplace_back(lengths[i], i);
         }
     }
-
     // Sort by length first, then by character
     std::sort(sorted_lengths.begin(), sorted_lengths.end(), [](const auto& a, const auto& b) {
         return a.first != b.first ? a.first < b.first : a.second < b.second;
@@ -70,8 +61,8 @@ std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_
             last_length = length;
         }
 
-        // Generate the code string representation
-        codes[character] = std::bitset<32>(code).to_string().substr(32 - length);
+        // Generate the code string representation up to 15 bits
+        codes[character] = std::bitset<15>(code).to_string().substr(15 - length);
         code++;
     }
 
@@ -217,7 +208,7 @@ int main(int argc, char* argv[]) {
             } else {
                 auto uncompressed_store = static_cast<column_data_dictionary_t::uncompressed_strings_t *>(page->string_store());
                 auto uncompressed = uncompressed_store->uncompressed_character_buffer();
-                // Extracting strings and filling the hashtable
+                // Extracting strings from the uncompressed buffer
                 std::istringstream ss(uncompressed);
                 std::string token;
                 while (std::getline(ss, token, '\0'))
