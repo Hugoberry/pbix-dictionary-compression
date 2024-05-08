@@ -145,35 +145,6 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 }
 
 
-// Decode a bitstream from start to end bit positions using the Huffman tree
-std::string decode_substring_with_map(const std::string& bitstream, const std::unordered_map<std::string, char>& huffmanMap, uint32_t start_bit, uint32_t end_bit) {
-    std::string result;
-    uint32_t total_bits = end_bit - start_bit;
-
-    int current_code = 0;
-    int code_length = 0;
-
-    // Adjust bit position calculation for little endian byte order
-    for (uint32_t i = 0; i < total_bits; ++i) {
-        uint32_t bit_pos = start_bit + i;
-        uint32_t byte_pos = bit_pos / 8;
-        uint32_t bit_offset = bit_pos % 8;
-        byte_pos = (byte_pos & ~0x01) + (1 - (byte_pos & 0x01));
-
-        current_code = (current_code << 1) | ((bitstream[byte_pos] & (1 << (7 - bit_offset))) != 0);
-        code_length++;
-
-        // Check lookup table if code length is within limit
-        if (code_length <= 15 && huffmanMap.count(std::bitset<15>(current_code).to_string().substr(15 - code_length)) > 0){
-            result += huffmanMap.at(std::bitset<15>(current_code).to_string().substr(15 - code_length));
-            current_code = 0;
-            code_length = 0;
-        }
-    }
-
-    return result;
-}
-
 // Print Huffman tree in a readable format
 void print_huffman_tree(HuffmanTree* node, int indent = 0) {
     if (node == nullptr) return;
