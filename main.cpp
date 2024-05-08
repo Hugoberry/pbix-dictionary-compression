@@ -12,7 +12,7 @@
 
 // Huffman Tree Node definition
 struct HuffmanTree {
-    char c;
+    uint8_t c;
     HuffmanTree* left;
     HuffmanTree* right;
 
@@ -23,6 +23,16 @@ struct HuffmanTree {
     }
 };
 
+std::string iso88591_to_utf8(uint8_t code) {
+    std::string utf8;
+    if (code >= 0x80) {
+        utf8.push_back(static_cast<char>(0xC2 + (code > 0xBF)));
+        utf8.push_back(static_cast<char>((code & 0x3F) + 0x80));
+    } else {
+        utf8.push_back(static_cast<char>(code));
+    }
+    return utf8;
+}
 // Function to generate the full 256-byte Huffman array from the compact 128-byte encode_array
 std::vector<uint8_t> decompress_encode_array(const std::vector<uint8_t>& compressed) {
     std::vector<uint8_t> full_array(256, 0);
@@ -39,7 +49,7 @@ std::vector<uint8_t> decompress_encode_array(const std::vector<uint8_t>& compres
 // Function to generate Huffman codes based on codeword lengths
 std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_t>& lengths) {
     std::unordered_map<uint8_t, std::string> codes;
-    std::vector<std::pair<int, uint8_t>> sorted_lengths;
+    std::vector<std::pair<uint8_t, uint8_t>> sorted_lengths;
 
     // Collect only the non-zero lengths and their associated symbols
     for (auto i = 0; i < 256; i++) {
@@ -73,8 +83,8 @@ std::unordered_map<uint8_t, std::string> generate_codes(const std::vector<uint8_
 void print_huffman_codes(const std::unordered_map<uint8_t, std::string>& codes) {
     std::cout << "Huffman Codes:\n";
     for (const auto& [character, code] : codes) {
-        std::cout << (char)character << ": " << code << '\n';
-    }
+        std::cout << (int)character <<" - " << character << ": " << code << '\n';
+        }
 }
 
 // Build Huffman tree based on generated codes
@@ -115,7 +125,7 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
         byte_pos = (byte_pos & ~0x01) + (1 - (byte_pos & 0x01));
 
         if (!node->left && !node->right) {
-            result += (char)(node->c);
+            result += iso88591_to_utf8(node->c);
             node = tree; // Reset to the root node
         }
 
@@ -129,7 +139,7 @@ std::string decode_substring(const std::string& bitstream, HuffmanTree* tree, ui
 
     // Append the last character if the final node is a leaf
     if (!node->left && !node->right) {
-        result += (char)(node->c);
+        result += iso88591_to_utf8(node->c);
     }
 
     return result;
@@ -234,6 +244,5 @@ int main(int argc, char* argv[]) {
             }
 
         }
-
     return 0;
 }
